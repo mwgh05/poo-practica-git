@@ -1,0 +1,9 @@
+node_modules
+bin
+!/bases II/hadoop-image/hive/bin
+*.exe
+*.o
+*.dll
+/.metadata/
+!/bases II/hadoop-image/kafka
+*.dat

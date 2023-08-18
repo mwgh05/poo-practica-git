@@ -1,0 +1,111 @@
+
+
+docker <operadores de docker> <nombre de la imagen> <parametros que se ejecutan adentro del container>
+docker run --name some-mongo -d mongo:tag 
+
+docker pull mongo
+docker run --name bases2 -d mongo
+
+// opciones , lo que se quiere es correr un programa/comando que sabemos que existe
+// dentro del sistema operativo en el container que se creo por medio de una imagen
+docker exec -it miservidorbases2 bash
+docker exec -it miservidorbases2 ls
+docker exec -it miservidorbases2 mongo
+
+show databases;
+use fincas;
+show tables;
+
+// collection es analogo a un table
+db.<nombrecollection>.save({json del documento});
+db.siembras.save({"tipoplanta": "culantro", "ubicacion": ["era 1", "era 2"], "semillas": 20 });
+db.siembras.save({"tipoplanta": "culantro", "ubica": ["era 1", "era 2"], "semillas": "200", "fecha" : "10/08/2021" });
+
+
+db.siembras.createIndex({"tipoplanta": 1});
+db.siembras.createIndex({"semillas": 1});
+
+select * from siembres en mongo seria
+db.siembras.find();
+db.siembras.find().pretty();
+
+db.siembras.save({"tipoplanta": "chayote", "ubica": ["era 4", "era 10"], "semillas": "10", "fecha" : "10/08/2021" });
+
+// cuando se trabaja con arreglos en mongo, el no tiene forma de agregar elementos
+// cuando se agregan elementos, mongo extrae todo el arreglo completo en memoria
+// le agrega el elemento y vuelve a escribir todo el arreglo
+// no hay que usar arrays cuando son muchos elementos
+// como recomendacion de diseño en mongo, usar los arreglos
+// para pocos elementos que no cambien muchos
+
+// mapear un folder de la maquina host a un folder dentro de un contenedor
+// esto normalmente es util cuando no queres que hayan datos volátiles
+
+docker run --name serverloquillo -p 27017:27017  mongo
+
+
+// la unica diferencia entre tener un indice o no tenerlo en mongo
+// es si la busqueda se va hacer secuencial o no
+db.siembras.createIndex({"tipoplanta": 1});
+// esta se hace usando el indice porque existe
+db.siembras.find({"tipoplanta" : "chayote"}).pretty();
+
+// pero cuando uno hace find sin indice, el recorrido siempre secuencial
+db.siembras.find({"semillas" : "200"}).pretty();
+
+
+// cuidado con este comando, va a borrar todos los volume mantenidos por docker
+#docker volume prune
+
+
+docker volume create datamongo
+docker run --name serverloquillo -d -p 27017:27017 -v datamongo:/data/db  mongo
+
+docker exec -it serverloquillo mongo
+use farms
+
+db.siembras.insertMany(
+    [
+        {"tipo" : "arroz", "area_m2": 20000, "fecha":"10/05/2020", "estado": "activo", "gananciaesperada": 230000},
+        {"tipo" : "arroz", "area_m2": 11000, "fecha":"10/15/2020", "estado": "activo", "gananciaesperada": 170000},
+        {"tipo" : "culantro", "area_m2": 2000, "fecha":"02/05/2021", "estado": "cosechado", "gananciaesperada": 18546},
+        {"tipo" : "chayote", "area_m2": 11000, "fecha":"22/01/2021", "estado": "activo", "gananciaesperada": 33000},
+        {"tipo" : "chile", "area_m2": 1000, "fecha":"22/01/2021", "estado": "cosechado", "gananciaesperada": 14500}        
+    ]
+);
+
+db.siembras.find(
+    {semillas: {$lt : 40}},
+).limit(10).pretty();
+
+db.siembras.find(
+    {semillas: {$lt : 120}},
+).limit(10).pretty();
+
+db.siembras.find(
+    {semillas: {$gt : 60}},
+).limit(10).pretty();
+
+
+
+db.siembras.aggregate([
+    { $match: { _id : {$exists:true}}},
+    { $group: { _id: "$tipoplanta", totalsemillas: { $sum: "$semillas" } } }
+]);
+
+// para busquedas por rangos y busquedas de igualidad
+db.siembras.createIndex({estado : 1});
+
+// solo para busquedas de igualdad donde se quieren retornar buckets de documentos dado un valor
+db.siembras.createIndex( { estado: "hashed" } );
+
+db.siembras.find({estado: "cosechado"}).pretty();
+
+db.stats();
+
+db.siembras.insertMany(
+    [
+        {"tipo" : "fresas", "area_m2": 45000, "fecha":"10/09/2021", "estado": "activo", "gananciaesperada": 130000},
+        {"tipo" : "arroz", "area_m2": 8000, "area_m2": 11000, "fecha":"10/15/2020", "estado": "activo", "gananciaesperada": 170000}
+    ]
+);
